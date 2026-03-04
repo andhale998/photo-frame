@@ -1,93 +1,535 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=1024, initial-scale=1.0">
-<title>Kindle Browser Test</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photo Frame</title>
 <style>
-  body { background:#fff; color:#000; font-family:monospace; font-size:16px; padding:20px; }
-  .ok  { color:green; }
-  .err { color:red; }
-  .row { margin:8px 0; padding:8px; border:1px solid #ccc; }
-  h2   { margin:20px 0 10px; font-size:18px; }
+* { margin:0; padding:0; }
+html, body {
+  width:100%; height:100%;
+  overflow:hidden;
+  background:#000;
+  font-family:Georgia,'Times New Roman',serif;
+}
+
+/* photo fills screen */
+#photoImg {
+  position:fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  display:block;
+  filter:grayscale(100%);
+  -webkit-filter:grayscale(100%);
+}
+
+/* dark gradient scrim behind widget */
+#scrim {
+  position:fixed;
+  top:0; left:0; right:0; bottom:0;
+  pointer-events:none;
+  z-index:2;
+}
+
+/* widget — uses absolute positioning, no flex */
+#widget {
+  position:fixed;
+  z-index:3;
+  pointer-events:none;
+  padding:14px 18px 12px;
+}
+
+#wTime {
+  font-size:64px;
+  font-family:'Courier New',Courier,monospace;
+  font-weight:bold;
+  color:#fff;
+  line-height:1;
+  text-shadow:0 2px 8px #000, 0 0 20px #000;
+  display:block;
+}
+#wDate {
+  font-size:14px;
+  color:#ccc;
+  font-style:italic;
+  margin-top:4px;
+  text-shadow:0 1px 4px #000;
+  display:block;
+}
+#wWeather {
+  margin-top:8px;
+  display:block;
+}
+#wTemp {
+  font-size:38px;
+  font-family:'Courier New',Courier,monospace;
+  font-weight:bold;
+  color:#fff;
+  text-shadow:0 2px 6px #000;
+  display:inline;
+}
+#wUnit {
+  font-size:17px;
+  color:#aaa;
+  display:inline;
+  vertical-align:top;
+  margin-top:8px;
+  display:inline-block;
+}
+#wDesc {
+  font-size:12px;
+  color:#bbb;
+  font-style:italic;
+  margin-top:2px;
+  text-shadow:0 1px 4px #000;
+  display:block;
+}
+#wCity {
+  font-size:11px;
+  color:#777;
+  margin-top:1px;
+  display:block;
+}
+
+/* nav arrows */
+#navLeft, #navRight {
+  position:fixed;
+  top:50%;
+  margin-top:-40px;
+  width:48px;
+  height:80px;
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.2);
+  color:rgba(255,255,255,0.6);
+  font-size:36px;
+  text-align:center;
+  line-height:80px;
+  cursor:pointer;
+  z-index:10;
+}
+#navLeft  { left:0; }
+#navRight { right:0; }
+
+#statusBar {
+  position:fixed;
+  top:8px;
+  left:50%;
+  margin-left:-150px;
+  width:300px;
+  text-align:center;
+  color:rgba(255,255,255,0.3);
+  font-size:11px;
+  font-family:'Courier New',monospace;
+  z-index:6;
+  pointer-events:none;
+}
+
+#settingsBtn {
+  position:fixed;
+  top:8px; left:8px;
+  width:36px; height:36px;
+  background:rgba(0,0,0,0.4);
+  border:1px solid rgba(255,255,255,0.15);
+  color:rgba(255,255,255,0.4);
+  font-size:22px;
+  text-align:center;
+  line-height:36px;
+  cursor:pointer;
+  z-index:20;
+}
+
+/* config panel */
+#configPanel {
+  position:fixed;
+  top:0; left:0; right:0; bottom:0;
+  background:#0c0c0c;
+  display:none;
+  z-index:30;
+  text-align:center;
+  padding:30px 40px;
+  overflow-y:auto;
+}
+#configPanel h2 {
+  font-size:20px;
+  font-family:'Courier New',monospace;
+  color:#fff;
+  letter-spacing:2px;
+  margin-bottom:12px;
+}
+#configPanel p {
+  font-size:13px; color:#777;
+  line-height:1.7; margin-bottom:14px;
+}
+#configPanel label {
+  display:block;
+  font-size:11px; color:#555;
+  font-family:'Courier New',monospace;
+  letter-spacing:1px;
+  text-align:left;
+  margin-bottom:4px;
+  margin-top:12px;
+}
+#albumInput, #intervalSelect {
+  width:100%;
+  padding:12px 14px;
+  font-size:13px;
+  background:#1a1a1a; color:#ddd;
+  border:1px solid #3a3a3a;
+  font-family:'Courier New',monospace;
+  display:block;
+  margin-bottom:4px;
+}
+#loadBtn {
+  margin-top:18px;
+  padding:13px 44px;
+  font-size:16px;
+  background:#e0e0e0; color:#000;
+  border:none;
+  cursor:pointer;
+  font-family:Georgia,serif;
+}
+#configHint {
+  font-size:11px; color:#333;
+  margin-top:14px;
+}
+#errorMsg {
+  color:#c55;
+  font-size:13px;
+  margin-top:10px;
+  display:none;
+}
+
+/* loader */
+#loader {
+  position:fixed;
+  top:0; left:0; right:0; bottom:0;
+  background:#000;
+  display:none;
+  z-index:25;
+  text-align:center;
+  padding-top:340px;
+  color:#555;
+  font-size:13px;
+  font-family:'Courier New',monospace;
+}
 </style>
 </head>
 <body>
-<h2>Kindle Browser Capability Test</h2>
-<div id="out"></div>
+
+<img id="photoImg" src="" alt="">
+<div id="scrim"></div>
+
+<div id="widget">
+  <span id="wTime">--:--</span>
+  <span id="wDate"></span>
+  <span id="wWeather">
+    <span id="wTemp">--</span><span id="wUnit">&#176;C</span>
+    <span id="wDesc">Loading weather...</span>
+    <span id="wCity"></span>
+  </span>
+</div>
+
+<div id="navLeft"  onclick="prevPhoto()">&#8249;</div>
+<div id="navRight" onclick="nextPhoto()">&#8250;</div>
+<div id="statusBar"></div>
+<div id="settingsBtn" onclick="toggleConfig()">&#9881;</div>
+
+<div id="configPanel">
+  <h2>PHOTO FRAME</h2>
+  <p>Paste your Google Photos shared album URL.<br>
+     Set sharing to <strong style="color:#bbb">Anyone with the link can view</strong>.</p>
+  <div id="errorMsg"></div>
+  <label>ALBUM URL</label>
+  <input id="albumInput" type="text" value="">
+  <label>SLIDESHOW INTERVAL</label>
+  <select id="intervalSelect">
+    <option value="60000">1 minute</option>
+    <option value="300000">5 minutes</option>
+    <option value="600000">10 minutes</option>
+    <option value="1800000">30 minutes</option>
+    <option value="3600000">1 hour</option>
+    <option value="18000000">5 hours</option>
+    <option value="43200000">12 hours</option>
+    <option value="86400000">1 day</option>
+    <option value="259200000">3 days</option>
+    <option value="864000000">10 days</option>
+  </select>
+  <button id="loadBtn" onclick="saveAndLoad()">Load Album</button>
+  <p id="configHint">Settings saved locally &#183; Widget rotates corners to prevent burn-in &#183; Screen stays awake</p>
+</div>
+
+<div id="loader">Loading album...</div>
 
 <script>
-var out = document.getElementById('out');
-function row(label, ok, detail) {
-  var d = document.createElement('div');
-  d.className = 'row';
-  d.innerHTML = '<span class="' + (ok?'ok':'err') + '">' + (ok?'✓':'✗') + '</span> '
-    + '<b>' + label + '</b>'
-    + (detail ? ' — ' + detail : '');
-  out.appendChild(d);
+// ═══════════════════════════
+//  POLYFILLS for old WebKit
+// ═══════════════════════════
+if (!String.prototype.trim) {
+  String.prototype.trim = function() { return this.replace(/^\s+|\s+$/g,''); };
 }
 
-// 1. localStorage
-try {
-  localStorage.setItem('test','1');
-  localStorage.removeItem('test');
-  row('localStorage', true, 'works');
-} catch(e) { row('localStorage', false, e.message); }
+// ═══════════════════════════
+//  STORAGE
+// ═══════════════════════════
+var _mem = {};
+function storeGet(k, d) {
+  try { var v = localStorage.getItem(k); return v !== null ? v : d; } catch(e) { return _mem[k] !== undefined ? _mem[k] : d; }
+}
+function storeSet(k, v) {
+  try { localStorage.setItem(k, v); } catch(e) { _mem[k] = v; }
+}
 
-// 2. fetch API
-row('fetch API', typeof fetch !== 'undefined', typeof fetch);
+// ═══════════════════════════
+//  KEEP AWAKE
+//  Toggle a pixel every 20s
+// ═══════════════════════════
+var _wc = 0;
+function keepAwake() {
+  _wc++;
+  var img = document.getElementById('photoImg');
+  img.style.opacity = (_wc % 2 === 0) ? '1' : '0.9999';
+}
+setInterval(keepAwake, 20000);
 
-// 3. Promise
-row('Promise', typeof Promise !== 'undefined', typeof Promise);
+// ═══════════════════════════
+//  WIDGET CORNER ROTATION
+// ═══════════════════════════
+var CORNERS = [
+  { top:'auto', left:'0',    bottom:'0',    right:'auto',
+    scrim:'url() no-repeat',
+    bg:'-webkit-gradient(linear, left bottom, right top, from(rgba(0,0,0,0.85)), color-stop(0.35,rgba(0,0,0,0.4)), to(transparent))' },
+  { top:'auto', left:'auto', bottom:'0',    right:'0',
+    bg:'-webkit-gradient(linear, right bottom, left top, from(rgba(0,0,0,0.85)), color-stop(0.35,rgba(0,0,0,0.4)), to(transparent))' },
+  { top:'0',    left:'0',    bottom:'auto', right:'auto',
+    bg:'-webkit-gradient(linear, left top, right bottom, from(rgba(0,0,0,0.85)), color-stop(0.35,rgba(0,0,0,0.4)), to(transparent))' },
+  { top:'0',    left:'auto', bottom:'auto', right:'0',
+    bg:'-webkit-gradient(linear, right top, left bottom, from(rgba(0,0,0,0.85)), color-stop(0.35,rgba(0,0,0,0.4)), to(transparent))' }
+];
+var cornerIdx = 0;
 
-// 4. String.padStart
-row('String.padStart', typeof ''.padStart === 'function');
+function applyCorner(idx) {
+  var c = CORNERS[idx];
+  var w = document.getElementById('widget');
+  var s = document.getElementById('scrim');
+  w.style.top    = c.top;
+  w.style.left   = c.left;
+  w.style.bottom = c.bottom;
+  w.style.right  = c.right;
+  s.style.background = c.bg;
+}
+applyCorner(0);
 
-// 5. CSS transition
-var el = document.createElement('div');
-row('CSS transitions', typeof el.style.transition !== 'undefined');
+function moveWidget() {
+  cornerIdx = (cornerIdx + 1) % 4;
+  applyCorner(cornerIdx);
+}
 
-// 6. CSS fixed positioning
-el.style.position = 'fixed';
-row('position:fixed', el.style.position === 'fixed');
+// ═══════════════════════════
+//  CLOCK — no padStart
+// ═══════════════════════════
+var DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+var MONTHS = ['January','February','March','April','May','June',
+              'July','August','September','October','November','December'];
 
-// 7. User agent
-row('User-Agent', true, navigator.userAgent);
+function p2(n) { return n < 10 ? '0' + n : '' + n; }
 
-// 8. Screen size
-row('Screen', true, screen.width + 'x' + screen.height + ' | window: ' + window.innerWidth + 'x' + window.innerHeight);
+function updateClock() {
+  var now = new Date();
+  document.getElementById('wTime').innerHTML = p2(now.getHours()) + ':' + p2(now.getMinutes());
+  document.getElementById('wDate').innerHTML = DAYS[now.getDay()] + ', ' + now.getDate() + ' ' + MONTHS[now.getMonth()] + ' ' + now.getFullYear();
+}
 
-// 9. Test fetch to a simple endpoint
-if (typeof fetch !== 'undefined') {
-  var t0 = Date.now();
-  fetch('https://api.ipify.org?format=json')
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      row('fetch() network test', true, 'IP: ' + d.ip + ' (' + (Date.now()-t0) + 'ms)');
-    })
-    .catch(function(e){
-      row('fetch() network test', false, e.message);
+// sync to top of minute
+function startClock() {
+  updateClock();
+  var now = new Date();
+  var wait = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
+  setTimeout(function() { updateClock(); setInterval(updateClock, 60000); }, wait);
+}
+startClock();
+
+// ═══════════════════════════
+//  XHR helper (no fetch/Promise)
+// ═══════════════════════════
+function xhrGet(url, timeout, cb) {
+  var done = false;
+  var xhr = new XMLHttpRequest();
+  var tid = setTimeout(function() {
+    if (!done) { done = true; try { xhr.abort(); } catch(e){} cb(new Error('Timeout'), null); }
+  }, timeout);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4 && !done) {
+      done = true;
+      clearTimeout(tid);
+      if (xhr.status === 200) cb(null, xhr.responseText);
+      else cb(new Error('HTTP ' + xhr.status), null);
+    }
+  };
+  xhr.onerror = function() { if (!done) { done=true; clearTimeout(tid); cb(new Error('XHR error'),null); } };
+  try { xhr.open('GET', url, true); xhr.send(); }
+  catch(e) { if (!done) { done=true; clearTimeout(tid); cb(e,null); } }
+}
+
+// ═══════════════════════════
+//  WEATHER
+// ═══════════════════════════
+var WMO = {
+  0:'Clear',1:'Mainly Clear',2:'Partly Cloudy',3:'Overcast',
+  45:'Fog',48:'Fog',
+  51:'Drizzle',53:'Drizzle',55:'Drizzle',
+  61:'Rain',63:'Rain',65:'Rain',
+  71:'Snow',73:'Snow',75:'Snow',77:'Snow',
+  80:'Showers',81:'Showers',82:'Heavy Showers',
+  95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm'
+};
+
+function fetchWeather() {
+  xhrGet('https://ipapi.co/json/', 8000, function(err, text) {
+    if (err || !text) return;
+    var geo;
+    try { geo = JSON.parse(text); } catch(e) { return; }
+    var lat = geo.latitude, lon = geo.longitude, city = geo.city || '';
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat
+            + '&longitude=' + lon
+            + '&current=temperature_2m,weathercode&temperature_unit=celsius&timezone=auto';
+    xhrGet(url, 8000, function(err2, text2) {
+      if (err2 || !text2) return;
+      var wx;
+      try { wx = JSON.parse(text2); } catch(e) { return; }
+      var code = wx.current.weathercode;
+      var temp = Math.round(wx.current.temperature_2m);
+      document.getElementById('wTemp').innerHTML = temp;
+      document.getElementById('wDesc').innerHTML = WMO[code] || '';
+      document.getElementById('wCity').innerHTML = city;
     });
-} else {
-  row('fetch() network test', false, 'fetch not available');
+  });
+}
+fetchWeather();
+setInterval(fetchWeather, 900000); // 15 min
+
+// ═══════════════════════════
+//  PHOTOS
+// ═══════════════════════════
+var photos       = [];
+var curPhoto     = 0;
+var slideTimer   = null;
+var slideMs      = 300000;
+
+var PROXIES = [
+  'https://corsproxy.io/?',
+  'https://api.codetabs.com/v1/proxy?quest='
+];
+
+function fetchViaProxy(url, proxyIdx, cb) {
+  if (proxyIdx >= PROXIES.length) { cb(new Error('All proxies failed'), null); return; }
+  var pu = PROXIES[proxyIdx] + encodeURIComponent(url);
+  xhrGet(pu, 15000, function(err, text) {
+    if (err || !text) { fetchViaProxy(url, proxyIdx + 1, cb); return; }
+    if (text.charAt(0) === '{' && text.indexOf('"contents"') !== -1) {
+      try { text = JSON.parse(text).contents; } catch(e) {}
+    }
+    cb(null, text);
+  });
 }
 
-// 10. Test corsproxy
-if (typeof fetch !== 'undefined') {
-  var t1 = Date.now();
-  fetch('https://corsproxy.io/?https%3A%2F%2Fapi.ipify.org%3Fformat%3Djson')
-    .then(function(r){ return r.json(); })
-    .then(function(d){
-      row('corsproxy.io reachable', true, (Date.now()-t1) + 'ms');
-    })
-    .catch(function(e){
-      row('corsproxy.io reachable', false, e.message);
-    });
+function extractPhotos(html) {
+  var seen = {}, results = [], re = /AP1Gcz[A-Za-z0-9_\-]{20,}/g, m;
+  while ((m = re.exec(html)) !== null) { if (!seen[m[0]]) { seen[m[0]] = 1; results.push('https://lh3.googleusercontent.com/pw/' + m[0] + '=w1024-h758-c'); } }
+  return results;
 }
 
-// 11. Clock test
-var now = new Date();
-row('Date/Time', true, now.toString());
+function ivLabel(ms) {
+  if (ms < 3600000)  return (ms/60000) + 'min';
+  if (ms < 86400000) return (ms/3600000) + 'hr';
+  return (ms/86400000) + 'd';
+}
+
+function updateStatus() {
+  document.getElementById('statusBar').innerHTML = photos.length
+    ? (curPhoto+1) + ' / ' + photos.length + '  ·  ' + ivLabel(slideMs) : '';
+}
+
+function showPhoto(idx) {
+  if (!photos.length) return;
+  var img = document.getElementById('photoImg');
+  img.style.opacity = '0';
+  setTimeout(function() {
+    img.onload = function() { img.style.opacity='1'; moveWidget(); updateStatus(); };
+    img.onerror = function() { img.style.opacity='1'; curPhoto=(curPhoto+1)%photos.length; showPhoto(curPhoto); };
+    img.src = photos[idx];
+  }, 500);
+}
+
+function nextPhoto() { curPhoto=(curPhoto+1)%photos.length; showPhoto(curPhoto); resetTimer(); }
+function prevPhoto() { curPhoto=(curPhoto-1+photos.length)%photos.length; showPhoto(curPhoto); resetTimer(); }
+
+function startSlideshow() {
+  clearInterval(slideTimer);
+  slideTimer = setInterval(function() { curPhoto=(curPhoto+1)%photos.length; showPhoto(curPhoto); }, slideMs);
+}
+function resetTimer() { clearInterval(slideTimer); startSlideshow(); }
+
+function loadAlbum(url) {
+  document.getElementById('configPanel').style.display = 'none';
+  document.getElementById('errorMsg').style.display    = 'none';
+  document.getElementById('loader').style.display      = 'block';
+
+  fetchViaProxy(url, 0, function(err, html) {
+    document.getElementById('loader').style.display = 'none';
+    if (err || !html) { showErr('Could not load album. Check Wi-Fi connection.'); return; }
+    var found = extractPhotos(html);
+    if (!found.length) { showErr('No photos found. Make sure album is set to "Anyone with the link".'); return; }
+    photos = found; curPhoto = 0;
+    showPhoto(0); startSlideshow();
+  });
+}
+
+function showErr(msg) {
+  var p = document.getElementById('configPanel');
+  p.style.display = 'block';
+  var e = document.getElementById('errorMsg');
+  e.innerHTML = '&#9888; ' + msg;
+  e.style.display = 'block';
+}
+
+function saveAndLoad() {
+  var url = document.getElementById('albumInput').value;
+  if (url) url = url.replace(/^\s+|\s+$/g,''); 
+  if (!url) return;
+  var iv = document.getElementById('intervalSelect').value;
+  storeSet('albumUrl', url);
+  storeSet('interval', iv);
+  slideMs = parseInt(iv, 10);
+  loadAlbum(url);
+}
+
+function toggleConfig() {
+  var p = document.getElementById('configPanel');
+  if (p.style.display === 'block') {
+    p.style.display = 'none';
+  } else {
+    document.getElementById('albumInput').value = storeGet('albumUrl','');
+    var savedIv = storeGet('interval','300000');
+    var sel = document.getElementById('intervalSelect');
+    for (var i=0; i<sel.options.length; i++) {
+      if (sel.options[i].value === savedIv) { sel.selectedIndex = i; break; }
+    }
+    p.style.display = 'block';
+  }
+}
+
+// ── startup ──
+(function() {
+  var savedUrl = storeGet('albumUrl','');
+  var savedIv  = storeGet('interval','300000');
+  slideMs = parseInt(savedIv, 10);
+  if (savedUrl) {
+    document.getElementById('albumInput').value = savedUrl;
+    loadAlbum(savedUrl);
+  } else {
+    document.getElementById('configPanel').style.display = 'block';
+  }
+})();
 </script>
 </body>
 </html>
