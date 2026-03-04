@@ -1,572 +1,93 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1024, initial-scale=1.0">
-<title>Photo Frame</title>
+<title>Kindle Browser Test</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-
-html, body {
-  width: 1024px;
-  height: 758px;
-  overflow: hidden;
-  background: #000;
-  font-family: Georgia, 'Times New Roman', serif;
-}
-
-#photoWrap {
-  position: fixed;
-  inset: 0;
-}
-#photoImg {
-  width: 1024px;
-  height: 758px;
-  object-fit: cover;
-  display: block;
-  filter: grayscale(100%) contrast(1.1) brightness(0.88);
-  opacity: 1;
-  transition: opacity 1.2s ease;
-}
-#photoImg.fade { opacity: 0; }
-
-/* ── WIDGET — repositions on each photo change ── */
-#widget {
-  position: fixed;
-  z-index: 5;
-  pointer-events: none;
-  transition: top 0.8s ease, left 0.8s ease, bottom 0.8s ease, right 0.8s ease;
-  /* default pos, overridden by JS */
-}
-
-/* Each corner gets a gradient scrim behind the widget */
-#scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
-  /* gradient painted by JS to match widget corner */
-  transition: background 0.8s ease;
-}
-
-.w-inner {
-  padding: 14px 18px 12px;
-}
-
-#wTime {
-  font-size: 72px;
-  font-family: 'Courier New', monospace;
-  font-weight: bold;
-  color: #fff;
-  line-height: 1;
-  letter-spacing: -2px;
-  text-shadow: 0 2px 10px rgba(0,0,0,1);
-}
-#wDate {
-  font-size: 15px;
-  color: rgba(255,255,255,0.75);
-  font-style: italic;
-  margin-top: 4px;
-  text-shadow: 0 1px 6px rgba(0,0,0,1);
-}
-#wWeatherRow {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-top: 8px;
-}
-#wIcon { font-size: 28px; line-height: 1; }
-#wTemp {
-  font-size: 42px;
-  font-family: 'Courier New', monospace;
-  font-weight: bold;
-  color: #fff;
-  line-height: 1;
-  text-shadow: 0 2px 8px rgba(0,0,0,1);
-}
-#wUnit { font-size: 18px; color: rgba(255,255,255,0.6); align-self:flex-start; margin-top:5px; }
-#wDesc { font-size: 13px; color: rgba(255,255,255,0.65); font-style:italic; margin-top:2px; text-shadow:0 1px 4px rgba(0,0,0,1); }
-#wCity { font-size: 11px; color: rgba(255,255,255,0.38); margin-top:1px; }
-
-/* ── NAV ── */
-#navLeft, #navRight {
-  position: fixed;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 48px; height: 80px;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.55);
-  font-size: 32px;
-  display: flex; align-items:center; justify-content:center;
-  cursor: pointer;
-  z-index: 10;
-}
-#navLeft  { left:0;  border-left:none;  border-radius:0 5px 5px 0; }
-#navRight { right:0; border-right:none; border-radius:5px 0 0 5px; }
-
-/* ── STATUS BAR — top centre ── */
-#statusBar {
-  position: fixed;
-  top: 10px; left: 50%;
-  transform: translateX(-50%);
-  color: rgba(255,255,255,0.3);
-  font-size: 11px;
-  font-family: 'Courier New', monospace;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.9);
-  z-index: 6;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-/* ── SETTINGS ── */
-#settingsBtn {
-  position: fixed;
-  top: 8px; left: 8px;
-  width: 34px; height: 34px;
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 4px;
-  color: rgba(255,255,255,0.35);
-  font-size: 17px;
-  cursor: pointer;
-  display: flex; align-items:center; justify-content:center;
-  z-index: 20;
-}
-
-/* ── CONFIG PANEL ── */
-#configPanel {
-  position: fixed;
-  inset: 0;
-  background: #0c0c0c;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  padding: 30px 60px;
-  z-index: 30;
-}
-#configPanel h2 {
-  font-size: 20px;
-  font-family: 'Courier New', monospace;
-  color: #fff;
-  letter-spacing: 2px;
-}
-#configPanel p { font-size: 13px; color: #777; text-align:center; line-height:1.7; max-width:760px; }
-#configPanel label { font-size: 12px; color: #555; align-self:flex-start; margin-bottom:-10px; font-family:'Courier New',monospace; letter-spacing:1px; }
-#configPanel input, #configPanel select {
-  width: 100%; max-width: 800px;
-  padding: 11px 14px;
-  font-size: 13px;
-  background: #1a1a1a;
-  color: #ddd;
-  border: 1px solid #3a3a3a;
-  border-radius: 4px;
-  font-family: 'Courier New', monospace;
-}
-#configPanel select option { background: #1a1a1a; }
-#configPanel button {
-  padding: 12px 40px;
-  font-size: 15px;
-  background: #e0e0e0;
-  color: #000;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-family: Georgia, serif;
-  margin-top: 4px;
-}
-#configPanel .hint { font-size: 11px; color: #3a3a3a; }
-
-/* ── LOADER ── */
-#loader {
-  position: fixed;
-  inset: 0;
-  background: #000;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  z-index: 25;
-  color: #555;
-  font-size: 13px;
-  font-family: 'Courier New', monospace;
-}
-.spinner {
-  width: 32px; height: 32px;
-  border: 3px solid #1e1e1e;
-  border-top-color: #777;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+  body { background:#fff; color:#000; font-family:monospace; font-size:16px; padding:20px; }
+  .ok  { color:green; }
+  .err { color:red; }
+  .row { margin:8px 0; padding:8px; border:1px solid #ccc; }
+  h2   { margin:20px 0 10px; font-size:18px; }
 </style>
 </head>
 <body>
-
-<div id="photoWrap"><img id="photoImg" src="" alt=""></div>
-<div id="scrim"></div>
-
-<!-- Info widget -->
-<div id="widget">
-  <div class="w-inner">
-    <div id="wTime">--:--</div>
-    <div id="wDate"></div>
-    <div id="wWeatherRow">
-      <span id="wIcon"></span>
-      <span id="wTemp">--</span>
-      <span id="wUnit">°C</span>
-    </div>
-    <div id="wDesc">Fetching weather…</div>
-    <div id="wCity"></div>
-  </div>
-</div>
-
-<!-- Nav -->
-<div id="navLeft"  onclick="prevPhoto()">&#8249;</div>
-<div id="navRight" onclick="nextPhoto()">&#8250;</div>
-
-<!-- Status bar -->
-<div id="statusBar">Loading…</div>
-
-<!-- Settings -->
-<div id="settingsBtn" onclick="toggleConfig()">&#9881;</div>
-
-<!-- Config -->
-<div id="configPanel">
-  <h2>PHOTO FRAME</h2>
-  <p>Paste your Google Photos shared album URL. Set sharing to <strong style="color:#bbb">Anyone with the link can view</strong>.</p>
-
-  <label>ALBUM URL</label>
-  <input id="albumInput" type="text" placeholder="https://photos.google.com/share/…">
-
-  <label>SLIDESHOW INTERVAL</label>
-  <select id="intervalSelect">
-    <option value="60000">1 minute</option>
-    <option value="300000" selected>5 minutes</option>
-    <option value="600000">10 minutes</option>
-    <option value="1800000">30 minutes</option>
-    <option value="3600000">1 hour</option>
-    <option value="18000000">5 hours</option>
-    <option value="43200000">12 hours</option>
-    <option value="86400000">1 day</option>
-    <option value="259200000">3 days</option>
-    <option value="864000000">10 days</option>
-  </select>
-
-  <button onclick="saveAndLoad()">Load Album</button>
-  <p class="hint">Settings saved locally &nbsp;·&nbsp; Widget moves each slide to prevent burn-in &nbsp;·&nbsp; Screen stays awake</p>
-</div>
-
-<!-- Loader -->
-<div id="loader">
-  <div class="spinner"></div>
-  <span id="loaderMsg">Loading album…</span>
-</div>
+<h2>Kindle Browser Capability Test</h2>
+<div id="out"></div>
 
 <script>
-'use strict';
-
-// ═══════════════════════════
-//  STORAGE
-// ═══════════════════════════
-var Store = {
-  get: function(k,d){ try{ return localStorage.getItem(k)||d; }catch(e){ return d; } },
-  set: function(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
-};
-
-// ═══════════════════════════
-//  KEEP AWAKE
-//  Mutate a property every 20s so Kindle
-//  browser never registers inactivity.
-// ═══════════════════════════
-var _wc = 0;
-function keepAwake() {
-  _wc++;
-  var img = document.getElementById('photoImg');
-  // Sub-perceptual opacity flicker — screen stays "active"
-  img.style.opacity = (_wc % 2 === 0) ? '1' : '0.9999';
-}
-setInterval(keepAwake, 20000);
-
-// ═══════════════════════════
-//  WIDGET POSITION ROTATION
-//  4 corners, cycles each photo change
-//  Each corner has a matching gradient scrim
-// ═══════════════════════════
-var CORNERS = [
-  // [top, right, bottom, left, gradientCSS]
-  { top:'auto', left:'0',    bottom:'0',    right:'auto',
-    scrim:'linear-gradient(to top right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 35%, transparent 60%)' },
-  { top:'auto', left:'auto', bottom:'0',    right:'0',
-    scrim:'linear-gradient(to top left,  rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 35%, transparent 60%)' },
-  { top:'0',    left:'0',    bottom:'auto', right:'auto',
-    scrim:'linear-gradient(to bottom right, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 35%, transparent 60%)' },
-  { top:'0',    left:'auto', bottom:'auto', right:'0',
-    scrim:'linear-gradient(to bottom left,  rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 35%, transparent 60%)' },
-];
-var cornerIdx = 0;
-
-function moveWidget() {
-  cornerIdx = (cornerIdx + 1) % CORNERS.length;
-  var c = CORNERS[cornerIdx];
-  var w = document.getElementById('widget');
-  var s = document.getElementById('scrim');
-  w.style.top    = c.top;
-  w.style.left   = c.left;
-  w.style.bottom = c.bottom;
-  w.style.right  = c.right;
-  s.style.background = c.scrim;
+var out = document.getElementById('out');
+function row(label, ok, detail) {
+  var d = document.createElement('div');
+  d.className = 'row';
+  d.innerHTML = '<span class="' + (ok?'ok':'err') + '">' + (ok?'✓':'✗') + '</span> '
+    + '<b>' + label + '</b>'
+    + (detail ? ' — ' + detail : '');
+  out.appendChild(d);
 }
 
-// Set initial corner without animation delay
-(function(){
-  var c = CORNERS[cornerIdx];
-  var w = document.getElementById('widget');
-  var s = document.getElementById('scrim');
-  w.style.top    = c.top;
-  w.style.left   = c.left;
-  w.style.bottom = c.bottom;
-  w.style.right  = c.right;
-  s.style.background = c.scrim;
-})();
+// 1. localStorage
+try {
+  localStorage.setItem('test','1');
+  localStorage.removeItem('test');
+  row('localStorage', true, 'works');
+} catch(e) { row('localStorage', false, e.message); }
 
-// ═══════════════════════════
-//  CLOCK  (updates every minute)
-// ═══════════════════════════
-var DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-var MONTHS = ['January','February','March','April','May','June',
-              'July','August','September','October','November','December'];
+// 2. fetch API
+row('fetch API', typeof fetch !== 'undefined', typeof fetch);
 
-function updateClock() {
-  var now = new Date();
-  var hh  = String(now.getHours()).padStart(2,'0');
-  var mm  = String(now.getMinutes()).padStart(2,'0');
-  document.getElementById('wTime').textContent = hh + ':' + mm;
-  document.getElementById('wDate').textContent =
-    DAYS[now.getDay()] + ',  ' + now.getDate() + ' ' + MONTHS[now.getMonth()] + ' ' + now.getFullYear();
-}
+// 3. Promise
+row('Promise', typeof Promise !== 'undefined', typeof Promise);
 
-// Sync to the top of the next minute
-function startClockSync() {
-  updateClock();
-  var now  = new Date();
-  var msToNextMin = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
-  setTimeout(function() {
-    updateClock();
-    setInterval(updateClock, 60000);
-  }, msToNextMin);
-}
-startClockSync();
+// 4. String.padStart
+row('String.padStart', typeof ''.padStart === 'function');
 
-// ═══════════════════════════
-//  WEATHER
-// ═══════════════════════════
-var WMO = {
-  0:'Clear',1:'Mainly Clear',2:'Partly Cloudy',3:'Overcast',
-  45:'Fog',48:'Freezing Fog',
-  51:'Light Drizzle',53:'Drizzle',55:'Heavy Drizzle',
-  61:'Light Rain',63:'Rain',65:'Heavy Rain',
-  71:'Light Snow',73:'Snow',75:'Heavy Snow',77:'Snow Grains',
-  80:'Showers',81:'Showers',82:'Heavy Showers',
-  85:'Snow Showers',86:'Heavy Snow Showers',
-  95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm'
-};
-var WMO_ICON = {
-  0:'☀',1:'🌤',2:'⛅',3:'☁',
-  45:'🌫',48:'🌫',
-  51:'🌦',53:'🌦',55:'🌧',
-  61:'🌧',63:'🌧',65:'🌧',
-  71:'🌨',73:'❄',75:'❄',77:'❄',
-  80:'🌦',81:'🌧',82:'⛈',
-  85:'🌨',86:'❄',
-  95:'⛈',96:'⛈',99:'⛈'
-};
+// 5. CSS transition
+var el = document.createElement('div');
+row('CSS transitions', typeof el.style.transition !== 'undefined');
 
-function fetchWeather() {
-  fetch('https://ipapi.co/json/')
+// 6. CSS fixed positioning
+el.style.position = 'fixed';
+row('position:fixed', el.style.position === 'fixed');
+
+// 7. User agent
+row('User-Agent', true, navigator.userAgent);
+
+// 8. Screen size
+row('Screen', true, screen.width + 'x' + screen.height + ' | window: ' + window.innerWidth + 'x' + window.innerHeight);
+
+// 9. Test fetch to a simple endpoint
+if (typeof fetch !== 'undefined') {
+  var t0 = Date.now();
+  fetch('https://api.ipify.org?format=json')
     .then(function(r){ return r.json(); })
-    .then(function(geo) {
-      var lat = geo.latitude, lon = geo.longitude;
-      var city = geo.city || geo.region || '';
-      var url = 'https://api.open-meteo.com/v1/forecast'
-              + '?latitude=' + lat + '&longitude=' + lon
-              + '&current=temperature_2m,weathercode&temperature_unit=celsius&timezone=auto';
-      return fetch(url).then(function(r){ return r.json(); }).then(function(wx){
-        var code = wx.current.weathercode;
-        var temp = Math.round(wx.current.temperature_2m);
-        document.getElementById('wTemp').textContent = temp;
-        document.getElementById('wIcon').textContent = WMO_ICON[code] || '';
-        document.getElementById('wDesc').textContent = WMO[code]      || '';
-        document.getElementById('wCity').textContent = city;
-      });
+    .then(function(d){
+      row('fetch() network test', true, 'IP: ' + d.ip + ' (' + (Date.now()-t0) + 'ms)');
     })
-    .catch(function(){
-      document.getElementById('wDesc').textContent = '';
+    .catch(function(e){
+      row('fetch() network test', false, e.message);
     });
-}
-fetchWeather();
-setInterval(fetchWeather, 15 * 60 * 1000);
-
-// ═══════════════════════════
-//  PHOTOS
-// ═══════════════════════════
-var photos       = [];
-var currentPhoto = 0;
-var slideTimer   = null;
-var slideInterval = 30000; // default, overridden by saved pref
-
-function fetchWithTimeout(url, ms) {
-  return new Promise(function(resolve, reject) {
-    var tid = setTimeout(function(){ reject(new Error('Timeout')); }, ms);
-    fetch(url).then(
-      function(r){ clearTimeout(tid); resolve(r); },
-      function(e){ clearTimeout(tid); reject(e); }
-    );
-  });
+} else {
+  row('fetch() network test', false, 'fetch not available');
 }
 
-var PROXIES = [
-  function(u){ return 'https://corsproxy.io/?' + encodeURIComponent(u); },
-  function(u){ return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(u); }
-];
-
-function fetchViaProxy(url) {
-  var idx = 0;
-  function tryNext() {
-    if (idx >= PROXIES.length) return Promise.reject(new Error('All proxies failed'));
-    var pu = PROXIES[idx++](url);
-    return fetchWithTimeout(pu, 12000)
-      .then(function(r){ if (!r.ok) throw new Error('HTTP '+r.status); return r.text(); })
-      .then(function(t){
-        if (t.trim().charAt(0) === '{' && t.indexOf('"contents"') !== -1)
-          return JSON.parse(t).contents;
-        return t;
-      })
-      .catch(function(){ return tryNext(); });
-  }
-  return tryNext();
-}
-
-function extractPhotos(html) {
-  var seen = {}, m;
-  var re = /AP1Gcz[A-Za-z0-9_\-]{20,}/g;
-  while ((m = re.exec(html)) !== null) seen[m[0]] = true;
-  return Object.keys(seen).map(function(tok){
-    return { src: 'https://lh3.googleusercontent.com/pw/' + tok + '=w1024-h758-c' };
-  });
-}
-
-function updateStatus() {
-  var secs = Math.round(slideInterval / 1000);
-  var label = secs >= 60 ? (secs/60) + ' min' : secs + 's';
-  var total = photos.length;
-  document.getElementById('statusBar').textContent =
-    total ? (currentPhoto+1) + ' / ' + total + '  ·  ' + label + ' interval' : '';
-}
-
-function showPhoto(idx) {
-  if (!photos.length) return;
-  var img = document.getElementById('photoImg');
-  img.classList.add('fade');
-  setTimeout(function(){
-    img.src = photos[idx].src;
-    img.onload  = function(){
-      img.classList.remove('fade');
-      moveWidget(); // shift widget corner on each new photo
-      updateStatus();
-    };
-    img.onerror = function(){
-      img.classList.remove('fade');
-      currentPhoto = (currentPhoto + 1) % photos.length;
-      showPhoto(currentPhoto);
-    };
-  }, 600);
-}
-
-function nextPhoto() {
-  currentPhoto = (currentPhoto + 1) % photos.length;
-  showPhoto(currentPhoto);
-  resetTimer();
-}
-function prevPhoto() {
-  currentPhoto = (currentPhoto - 1 + photos.length) % photos.length;
-  showPhoto(currentPhoto);
-  resetTimer();
-}
-function startSlideshow() {
-  clearInterval(slideTimer);
-  slideTimer = setInterval(function(){
-    currentPhoto = (currentPhoto + 1) % photos.length;
-    showPhoto(currentPhoto);
-  }, slideInterval);
-}
-function resetTimer() { clearInterval(slideTimer); startSlideshow(); }
-
-function loadAlbum(url) {
-  document.getElementById('configPanel').style.display = 'none';
-  document.getElementById('loader').style.display = 'flex';
-  document.getElementById('loaderMsg').textContent = 'Loading album…';
-
-  fetchViaProxy(url)
-    .then(function(html){
-      document.getElementById('loader').style.display = 'none';
-      var found = extractPhotos(html);
-      if (found.length === 0) throw new Error('No photos found — check album sharing settings');
-      photos = found;
-      currentPhoto = 0;
-      showPhoto(0);
-      startSlideshow();
+// 10. Test corsproxy
+if (typeof fetch !== 'undefined') {
+  var t1 = Date.now();
+  fetch('https://corsproxy.io/?https%3A%2F%2Fapi.ipify.org%3Fformat%3Djson')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      row('corsproxy.io reachable', true, (Date.now()-t1) + 'ms');
     })
-    .catch(function(err){
-      document.getElementById('loader').style.display = 'none';
-      document.getElementById('configPanel').style.display = 'flex';
-      document.getElementById('configPanel').querySelector('p').innerHTML =
-        '<span style="color:#c55">&#9888; ' + err.message + '</span><br><br>'
-        + 'Make sure the album is shared as <strong style="color:#bbb">Anyone with the link</strong> '
-        + 'and your device is connected to Wi-Fi.';
+    .catch(function(e){
+      row('corsproxy.io reachable', false, e.message);
     });
 }
 
-function saveAndLoad() {
-  var url = document.getElementById('albumInput').value.trim();
-  if (!url) return;
-  var iv = document.getElementById('intervalSelect').value;
-  Store.set('albumUrl', url);
-  Store.set('interval', iv);
-  slideInterval = parseInt(iv, 10);
-  loadAlbum(url);
-}
-
-function toggleConfig() {
-  var p = document.getElementById('configPanel');
-  var showing = p.style.display === 'flex';
-  if (showing) {
-    p.style.display = 'none';
-  } else {
-    document.getElementById('albumInput').value = Store.get('albumUrl','');
-    var savedIv = Store.get('interval','30000');
-    var sel = document.getElementById('intervalSelect');
-    for (var i=0; i<sel.options.length; i++) {
-      if (sel.options[i].value === savedIv) { sel.selectedIndex = i; break; }
-    }
-    p.style.display = 'flex';
-  }
-}
-
-// ── Startup ──
-(function(){
-  var savedUrl = Store.get('albumUrl','');
-  var savedIv  = Store.get('interval','30000');
-  slideInterval = parseInt(savedIv, 10);
-  if (savedUrl) {
-    loadAlbum(savedUrl);
-  } else {
-    document.getElementById('configPanel').style.display = 'flex';
-  }
-})();
+// 11. Clock test
+var now = new Date();
+row('Date/Time', true, now.toString());
 </script>
 </body>
 </html>
