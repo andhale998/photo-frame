@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1024, initial-scale=1.0">
+<title>Kindle Browser Test</title>
+<style>
+  body { background:#fff; color:#000; font-family:monospace; font-size:16px; padding:20px; }
+  .ok  { color:green; }
+  .err { color:red; }
+  .row { margin:8px 0; padding:8px; border:1px solid #ccc; }
+  h2   { margin:20px 0 10px; font-size:18px; }
+</style>
+</head>
+<body>
+<h2>Kindle Browser Capability Test</h2>
+<div id="out"></div>
+
+<script>
+var out = document.getElementById('out');
+function row(label, ok, detail) {
+  var d = document.createElement('div');
+  d.className = 'row';
+  d.innerHTML = '<span class="' + (ok?'ok':'err') + '">' + (ok?'✓':'✗') + '</span> '
+    + '<b>' + label + '</b>'
+    + (detail ? ' — ' + detail : '');
+  out.appendChild(d);
+}
+
+// 1. localStorage
+try {
+  localStorage.setItem('test','1');
+  localStorage.removeItem('test');
+  row('localStorage', true, 'works');
+} catch(e) { row('localStorage', false, e.message); }
+
+// 2. fetch API
+row('fetch API', typeof fetch !== 'undefined', typeof fetch);
+
+// 3. Promise
+row('Promise', typeof Promise !== 'undefined', typeof Promise);
+
+// 4. String.padStart
+row('String.padStart', typeof ''.padStart === 'function');
+
+// 5. CSS transition
+var el = document.createElement('div');
+row('CSS transitions', typeof el.style.transition !== 'undefined');
+
+// 6. CSS fixed positioning
+el.style.position = 'fixed';
+row('position:fixed', el.style.position === 'fixed');
+
+// 7. User agent
+row('User-Agent', true, navigator.userAgent);
+
+// 8. Screen size
+row('Screen', true, screen.width + 'x' + screen.height + ' | window: ' + window.innerWidth + 'x' + window.innerHeight);
+
+// 9. Test fetch to a simple endpoint
+if (typeof fetch !== 'undefined') {
+  var t0 = Date.now();
+  fetch('https://api.ipify.org?format=json')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      row('fetch() network test', true, 'IP: ' + d.ip + ' (' + (Date.now()-t0) + 'ms)');
+    })
+    .catch(function(e){
+      row('fetch() network test', false, e.message);
+    });
+} else {
+  row('fetch() network test', false, 'fetch not available');
+}
+
+// 10. Test corsproxy
+if (typeof fetch !== 'undefined') {
+  var t1 = Date.now();
+  fetch('https://corsproxy.io/?https%3A%2F%2Fapi.ipify.org%3Fformat%3Djson')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      row('corsproxy.io reachable', true, (Date.now()-t1) + 'ms');
+    })
+    .catch(function(e){
+      row('corsproxy.io reachable', false, e.message);
+    });
+}
+
+// 11. Clock test
+var now = new Date();
+row('Date/Time', true, now.toString());
+</script>
+</body>
+</html>
