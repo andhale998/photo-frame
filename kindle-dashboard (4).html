@@ -240,7 +240,7 @@ html, body {
      Set sharing to <strong style="color:#bbb">Anyone with the link can view</strong>.</p>
   <div id="errorMsg"></div>
   <label>ALBUM URL</label>
-  <input id="albumInput" type="text" value="">
+  <input id="albumInput" type="text" value="https://photos.google.com/share/AF1QipOrDlid43dlHerPMZafnBrVkWreGmWaYTu8HCXm2VfvSHfU6JPiS3b6gPHoWhQKrQ?key=ZWpzNTVxdktqMGd1aU15ZEZDaFBiSFp5ZFJFLVN3">
   <label>SLIDESHOW INTERVAL</label>
   <select id="intervalSelect">
     <option value="60000">1 minute</option>
@@ -523,12 +523,11 @@ function toggleConfig() {
   var savedUrl = storeGet('albumUrl','');
   var savedIv  = storeGet('interval','300000');
   slideMs = parseInt(savedIv, 10);
-  if (savedUrl) {
-    document.getElementById('albumInput').value = savedUrl;
-    loadAlbum(savedUrl);
-  } else {
-    document.getElementById('configPanel').style.display = 'block';
-  }
+  // Use saved URL if available, otherwise fall back to the default baked-in URL
+  var defaultUrl = 'https://photos.google.com/share/AF1QipOrDlid43dlHerPMZafnBrVkWreGmWaYTu8HCXm2VfvSHfU6JPiS3b6gPHoWhQKrQ?key=ZWpzNTVxdktqMGd1aU15ZEZDaFBiSFp5ZFJFLVN3';
+  var url = savedUrl || defaultUrl;
+  document.getElementById('albumInput').value = url;
+  loadAlbum(url);
 })();
 </script>
 </body>
